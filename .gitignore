@@ -22,17 +22,10 @@ ENV/
 *.gguf
 gpt-oss-20b-GGUF/*.gguf
 
-# RAG generated index (rebuilt with --build)
-index/documents.json
+# Chat history (persisted for model context/memory)
+chat_history/
 
-# Chat / history (optional – uncomment if you want to keep history out of git)
-# chat_history/
 
-# Environment and secrets
-.env
-.env.local
-.env.*.local
-*.pem
 
 # IDE / editor
 .idea/

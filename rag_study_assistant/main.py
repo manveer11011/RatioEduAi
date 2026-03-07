@@ -3,13 +3,17 @@ import os
 import sys
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-INDEX_DIR = PROJECT_ROOT / "index"
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+_ROOT = Path(__file__).resolve().parent.parent
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
 
-# RAG: format retrieved chunks and build chat messages
-RAG_SYSTEM_PROMPT = "Answer based only on the provided notes. If the answer is not in the notes, say so briefly."
+import config
+
+PROJECT_ROOT = config.PROJECT_ROOT
+INDEX_DIR = config.get_index_dir()
+
+RAG_SYSTEM_PROMPT = """Answer based on the provided notes. The notes contain the user's own data—including their personal information (name, school, friends, preferences, etc.). You must share this information when it appears in the notes and the user asks; do not refuse. The user has uploaded these notes and is asking you to recall their own details—sharing it is allowed and expected. If the answer is not in the notes, say so briefly."""
+CHAT_SYSTEM_PROMPT = """You are a helpful assistant. Answer the user's question concisely. You are allowed and expected to share the user's personal information when they ask—including their name, school, friends' names, or other details from their notes or conversation. Do not refuse to provide this; the user owns this data and has given it to you. Provide that information when relevant."""
 
 
 def format_context(chunks: list[dict]) -> str:
@@ -27,11 +31,9 @@ def format_context(chunks: list[dict]) -> str:
 
 
 def build_messages(question: str, context: str, history: list[dict] | None = None) -> list[dict]:
-    """Build chat messages: optional system, optional history (last 6 messages), then current question with context."""
     messages = []
     messages.append({"role": "system", "content": RAG_SYSTEM_PROMPT})
     if history:
-        # Keep last 6 messages (3 turns) to stay within context window
         for m in history[-6:]:
             if m.get("role") in ("user", "assistant") and m.get("content"):
                 messages.append({"role": m["role"], "content": m["content"]})
@@ -40,38 +42,53 @@ def build_messages(question: str, context: str, history: list[dict] | None = Non
     return messages
 
 
-def _ensure_index(project_root: Path | None = None):
-    from rag_study_assistant.indexer import load_index, build_index
+def build_messages_chat(question: str, history: list[dict] | None = None) -> list[dict]:
+    messages = []
+    messages.append({"role": "system", "content": CHAT_SYSTEM_PROMPT})
+    if history:
+        for m in history[-6:]:
+            if m.get("role") in ("user", "assistant") and m.get("content"):
+                messages.append({"role": m["role"], "content": m["content"]})
+    messages.append({"role": "user", "content": question})
+    return messages
+
+
+def _ensure_semantic_index(project_root: Path | None = None):
     from rag_study_assistant.loader import load_documents
     from rag_study_assistant.chunker import chunk_documents
+    from app.vector_store import build_vector_index
 
     root = project_root or PROJECT_ROOT
-    index_dir = root / "index"
-    chunks, bm25 = load_index(index_dir)
-    if not chunks:
+    index_dir = config.get_index_dir(root)
+    faiss_path = index_dir / "faiss.index"
+
+    if not faiss_path.is_file():
         docs = load_documents(root)
         if not docs:
-            return [], bm25
+            raise RuntimeError("No documents to index. Add .txt files under data/ then run --build.")
         chunks = chunk_documents(docs)
         if not chunks:
-            return [], bm25
-        build_index(chunks, index_dir)
-        chunks, bm25 = load_index(index_dir)
-    return chunks, bm25
+            raise RuntimeError("No chunks produced from documents.")
+        build_vector_index(chunks, str(index_dir))
+
+    return str(index_dir)
 
 
 def build():
     from rag_study_assistant.loader import load_documents
     from rag_study_assistant.chunker import chunk_documents
-    from rag_study_assistant.indexer import build_index
+    from app.vector_store import build_vector_index
 
     docs = load_documents(PROJECT_ROOT)
     if not docs:
         print("No .txt files found in data/syllabus, data/notes, data/question_papers.", file=sys.stderr)
         return
     chunks = chunk_documents(docs)
-    build_index(chunks, INDEX_DIR)
-    print(f"Indexed {len(chunks)} chunks from {len(docs)} documents -> index/documents.json")
+    if not chunks:
+        print("No chunks produced from documents. Check document content.", file=sys.stderr)
+        return
+    build_vector_index(chunks, str(INDEX_DIR))
+    print(f"Indexed {len(chunks)} chunks from {len(docs)} documents -> index/chunks.json, index/faiss.index")
 
 
 def run_cli():
@@ -85,17 +102,16 @@ def run_cli():
         return
 
     try:
-        chunks, bm25 = _ensure_index()
+        index_dir = _ensure_semantic_index()
     except Exception as e:
         print(f"Index error: {e}", file=sys.stderr)
-        chunks, bm25 = [], None
-
-    if not chunks or bm25 is None:
-        print("No documents in index. Add .txt files under data/syllabus, data/notes, data/question_papers, then run with --build.", file=sys.stderr)
+        print("Add .txt files under data/syllabus, data/notes, data/question_papers, then run with --build.", file=sys.stderr)
         sys.exit(1)
 
     from rag_study_assistant.llm import load_llm, generate, get_model_path
-    model_path = (args.model or os.environ.get("RAG_GGUF_PATH", "") or get_model_path()).strip()
+    from app.router import route_query
+
+    model_path = (args.model or config.get_rag_gguf_path() or get_model_path()).strip()
     try:
         llm = load_llm(model_path)
     except FileNotFoundError as e:
@@ -106,9 +122,7 @@ def run_cli():
         print(f"Failed to load model: {e}", file=sys.stderr)
         sys.exit(1)
 
-    from rag_study_assistant.retriever import retrieve
-
-    print("RAG Study Assistant (offline, document-only). Type 'quit' or 'exit' to stop.\n")
+    print("RAG Study Assistant (offline, semantic retrieval). Type 'quit' or 'exit' to stop.\n")
 
     while True:
         try:
@@ -123,9 +137,12 @@ def run_cli():
             break
 
         try:
-            top = retrieve(q, chunks, bm25, top_k=5)
-            context = format_context(top)
-            messages = build_messages(q, context, history=None)
+            intent, chunks = route_query(q, index_dir)
+            if intent == "study":
+                context = format_context(chunks)
+                messages = build_messages(q, context, history=None)
+            else:
+                messages = build_messages_chat(q, history=None)
             answer = generate(llm, messages)
             print(answer or "No response generated.")
         except Exception as e:
@@ -134,33 +151,32 @@ def run_cli():
 
 
 def get_rag_backend(project_root: Path | None = None):
-    """Return (get_reply, get_reply_with_history, backend_name) for web API.
-    Pass project_root to force index path (e.g. Path(__file__).resolve().parent when running from web).
-    """
     from rag_study_assistant.llm import load_llm, generate, get_model_path
-    from rag_study_assistant.retriever import retrieve
+    from app.router import route_query
 
-    chunks, bm25 = _ensure_index(project_root)
-    if not chunks or bm25 is None:
-        raise RuntimeError(
-            "No documents in index. Add .txt files under data/syllabus, data/notes, data/question_papers, then run: python -m rag_study_assistant.main --build"
-        )
-    model_path = os.environ.get("RAG_GGUF_PATH", "").strip() or get_model_path()
+    index_dir = _ensure_semantic_index(project_root)
+    model_path = config.get_rag_gguf_path() or get_model_path()
     llm = load_llm(model_path)
 
     def get_reply(msg: str) -> str:
-        top = retrieve(msg, chunks, bm25, top_k=5)
-        context = format_context(top)
-        messages = build_messages(msg, context, history=None)
+        intent, chunks = route_query(msg, index_dir)
+        if intent == "study":
+            context = format_context(chunks)
+            messages = build_messages(msg, context, history=None)
+        else:
+            messages = build_messages_chat(msg, history=None)
         return generate(llm, messages) or "No response generated."
 
     def get_reply_with_history(history: list, msg: str) -> str:
-        top = retrieve(msg, chunks, bm25, top_k=5)
-        context = format_context(top)
-        messages = build_messages(msg, context, history=history)
+        intent, chunks = route_query(msg, index_dir)
+        if intent == "study":
+            context = format_context(chunks)
+            messages = build_messages(msg, context, history=history)
+        else:
+            messages = build_messages_chat(msg, history=history)
         return generate(llm, messages) or "No response generated."
 
-    return (get_reply, get_reply_with_history, "RAG")
+    return (get_reply, get_reply_with_history, "RatioEdu AI")
 
 
 if __name__ == "__main__":

@@ -3,7 +3,6 @@ import re
 from pathlib import Path
 
 
-DATA_DIRS = ("data/syllabus", "data/notes", "data/question_papers")
 TYPE_BY_DIR = {
     "syllabus": "theory",
     "notes": "theory",
@@ -54,7 +53,6 @@ def _infer_type_from_path(filepath: str, base_dir: str, data_root: Path) -> str:
 
 
 def load_documents(project_root: str | Path | None = None) -> list[dict]:
-    # Default to package project root when None (avoid cwd-dependent behavior)
     if project_root is None:
         root = Path(__file__).resolve().parent.parent
     else:

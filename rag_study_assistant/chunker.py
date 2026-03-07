@@ -41,7 +41,6 @@ def chunk_document(doc: dict) -> list[dict]:
                 "text": text,
                 **meta,
             })
-        # Advance by at least one character; avoid infinite loop when content is short
         start = end - OVERLAP_CHARS
         if start < 0 or start >= len(content):
             break

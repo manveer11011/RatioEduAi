@@ -1,0 +1,8 @@
+question: Where is CGC?
+answer: Landran
+
+question: Full form of CGC?
+answer: Chandigarn Group of colleges
+
+question: what is my friend name?
+answer: harnoor

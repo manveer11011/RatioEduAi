@@ -14,3 +14,138 @@ Step 1: 2x = 7 - 3 = 4
 Step 2: (already isolated)
 Step 3: x = 4/2 = 2
 Step 4: 2(2) + 3 = 7. Correct.
+
+--- Additional Topics ---
+
+Topic: Quadratic equations
+Method:
+1. Move all terms to one side to get ax^2 + bx + c = 0.
+2. Use factorization, completing the square, or the quadratic formula x = (-b ± sqrt(b^2 - 4ac)) / (2a).
+3. Verify roots by substitution.
+
+Topic: Factoring polynomials
+Method:
+1. Look for common factors.
+2. Use grouping for four-term polynomials.
+3. Apply formulas (a^2 - b^2 = (a-b)(a+b), perfect square trinomials).
+
+Topic: Solving systems of linear equations
+Method:
+1. Use substitution or elimination to reduce to one equation in one variable.
+2. Alternatively, use matrix methods (Gaussian elimination).
+
+Topic: Basic differentiation (calculus)
+Method:
+1. Use power rule: d/dx x^n = n x^(n-1).
+2. Apply product, quotient, and chain rules as needed.
+
+Topic: Basic integration
+Method:
+1. Use power rule for integrals: ∫ x^n dx = x^(n+1)/(n+1) + C (n ≠ -1).
+2. Use substitution and integration by parts when applicable.
+
+Topic: Trigonometry identities
+Method:
+1. Memorize key identities: sin^2 x + cos^2 x = 1, angle addition formulas.
+2. Use identities to simplify expressions and solve equations.
+
+Topic: Geometry — area formulas
+Method:
+1. Triangle: A = 1/2 * base * height.
+2. Circle: A = π r^2.
+3. Rectangle: A = length * width.
+
+Topic: Probability basics
+Method:
+1. P(A) = favorable outcomes / total outcomes.
+2. For independent events, P(A and B) = P(A)P(B).
+
+Topic: Sequences and series
+Method:
+1. Identify arithmetic (difference constant) vs geometric (ratio constant) sequences.
+2. Arithmetic: nth term a_n = a_1 + (n-1)d, sum S_n = n/2 (2a_1 + (n-1)d).
+3. Geometric: nth term a_n = a_1 r^(n-1), sum S_n = a_1(1-r^n)/(1-r). Infinite geometric converges if |r|<1.
+
+Topic: Matrices
+Method:
+1. Operations: addition, scalar multiplication, matrix multiplication.
+2. Determinant and inverse for square matrices; use inverse or row reduction to solve linear systems.
+3. Eigenvalues and eigenvectors (basic idea and computation for small matrices).
+
+Topic: Complex numbers
+Method:
+1. Write z = a + bi; conjugate z̄ = a - bi; modulus |z| = sqrt(a^2 + b^2).
+2. Use polar form r(cos θ + i sin θ) and De Moivre's theorem for powers and roots.
+3. Perform arithmetic and solve equations with complex roots.
+
+Topic: Logarithms and exponents
+Method:
+1. Laws: a^m a^n = a^(m+n); log(ab)=log a + log b, etc.
+2. Solve exponential and logarithmic equations by rewriting forms.
+3. Use change of base: log_b a = log_k a / log_k b.
+
+Topic: Limits (calculus)
+Method:
+1. Evaluate limits by substitution when possible; factor or rationalize for indeterminate forms.
+2. Use L'Hôpital's rule for 0/0 or ∞/∞ cases.
+3. Understand limits as foundation for continuity and derivatives.
+
+Topic: Statistics — descriptive
+Method:
+1. Mean, median, and mode definitions and calculation.
+2. Variance and standard deviation formulas and interpretation.
+3. Understand skewness and basic distribution shapes.
+
+Topic: Combinatorics — counting
+Method:
+1. Permutations: n! / (n-k)! for ordered selections.
+2. Combinations: n choose k = n! / (k!(n-k)!) for unordered selections.
+3. Use inclusion-exclusion for overlapping counts.
+
+Topic: Number theory basics
+Method:
+1. Compute GCD using Euclidean algorithm; LCM via product/GCD relation.
+2. Prime factorization and its uses.
+3. Work with modular arithmetic and congruences.
+
+Topic: Vectors
+Method:
+1. Represent vectors, add, subtract, and scale.
+2. Dot product (gives projection), cross product (3D, gives area and perpendicular vector).
+3. Apply vectors to geometry and physics problems.
+
+Topic: Proof by induction
+Method:
+1. Prove base case (usually n=1 or 0).
+2. Assume statement for n (inductive hypothesis).
+3. Prove for n+1 using the hypothesis.
+
+Topic: Inequalities
+Method:
+1. Solve by isolating terms; reverse inequality when multiplying/dividing by negative numbers.
+2. Use common inequalities: AM-GM, Cauchy-Schwarz for bounds.
+3. Solve linear and quadratic inequalities using sign analysis or intervals.
+
+Topic: Coordinate geometry
+Method:
+1. Line: slope-intercept y = mx + b; slope m = (y2-y1)/(x2-x1).
+2. Distance formula: sqrt((x2-x1)^2 + (y2-y1)^2); midpoint formula.
+3. Equations of circles and conic sections (parabola, ellipse, hyperbola basics).
+
+Topic: Transformations (geometry)
+Method:
+1. Definitions: translation, rotation, reflection, dilation.
+2. Represent linear transformations with matrices.
+3. Compose transformations and understand effects on shapes.
+
+Topic: Set theory — basics
+Method:
+1. Definitions: union, intersection, complement, subset.
+2. Use Venn diagrams to visualize relationships.
+3. Apply set identities and De Morgan's laws.
+
+Topic: Binomial theorem
+Method:
+1. Expand (a + b)^n = sum_{k=0}^n C(n,k) a^{n-k} b^k, where C(n,k) = n choose k.
+2. Use Pascal's triangle to find coefficients.
+3. Apply to problems involving coefficients and expansions.
