@@ -64,7 +64,7 @@ AI-Teacher/
 ## How to Run
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt -r requirements-build.txt
 cd electron_app && npm install && npm run dev
 ```
 

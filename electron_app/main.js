@@ -1,17 +1,58 @@
 const { app, BrowserWindow } = require("electron");
 const path = require("path");
+const os = require("os");
 const { spawn } = require("child_process");
 const fs = require("fs");
 const http = require("http");
 
+// Use writable userData path to avoid "Access is denied" cache errors on Windows
+const userDataPath = path.join(os.homedir(), "AppData", "Local", "RatioEdu");
+app.setPath("userData", userDataPath);
+
 const PORT = 8000;
 const API_URL = `http://127.0.0.1:${PORT}`;
-const PROJECT_ROOT = path.join(__dirname, "..");
+
+function getProjectRoot() {
+  if (!app.isPackaged) return path.join(__dirname, "..");
+  const exeDir = path.dirname(process.execPath);
+  const resourcesPath = process.resourcesPath;
+  if (fs.existsSync(path.join(resourcesPath, "RatioEduBackend.exe"))) return exeDir;
+  if (fs.existsSync(path.join(resourcesPath, "start_backend.py"))) return resourcesPath;
+  let dir = path.resolve(exeDir);
+  for (let i = 0; i < 6; i++) {
+    if (fs.existsSync(path.join(dir, "start_backend.py"))) return dir;
+    const parent = path.join(dir, "..");
+    if (path.resolve(parent) === dir) break;
+    dir = path.resolve(parent);
+  }
+  return exeDir;
+}
+const PROJECT_ROOT = getProjectRoot();
 
 let backendProcess = null;
 
 function indexExists() {
   return fs.existsSync(path.join(PROJECT_ROOT, "index", "faiss.index"));
+}
+
+function hasDataFiles() {
+  const dataDir = path.join(PROJECT_ROOT, "data");
+  function walk(dir) {
+    if (!fs.existsSync(dir)) return false;
+    try {
+      for (const name of fs.readdirSync(dir)) {
+        const full = path.join(dir, name);
+        const stat = fs.statSync(full);
+        if (stat.isDirectory() && walk(full)) return true;
+        if (stat.isFile() && name.toLowerCase().endsWith(".txt")) return true;
+      }
+    } catch (_) { /* skip */ }
+    return false;
+  }
+  for (const sub of ["syllabus", "notes", "question_papers"]) {
+    if (walk(path.join(dataDir, sub))) return true;
+  }
+  return false;
 }
 
 function embeddingModelReady() {
@@ -46,6 +87,17 @@ function runRagBuild() {
 }
 
 function startBackend() {
+  if (app.isPackaged) {
+    const exe = path.join(process.resourcesPath, "RatioEduBackend.exe");
+    if (fs.existsSync(exe)) {
+      backendProcess = spawn(exe, [], {
+        cwd: PROJECT_ROOT,
+        env: { ...process.env, PORT: String(PORT) },
+        stdio: "pipe",
+      });
+      return backendProcess;
+    }
+  }
   const py = process.platform === "win32" ? "python" : "python3";
   const script = path.join(PROJECT_ROOT, "start_backend.py");
   if (!fs.existsSync(script)) {
@@ -120,29 +172,22 @@ app.whenReady().then(async () => {
       app.quit();
       return;
     }
-    if (!indexExists()) {
-      const built = await runRagBuild();
-      if (!built) {
-        splash.close();
-        const { dialog } = require("electron");
-        dialog.showErrorBox(
-          "Setup Required",
-          "Add .txt files under data/syllabus, data/notes, or data/question_papers, then restart the app.\n\nRun: python -m rag_study_assistant.main --build"
-        );
-        app.quit();
-        return;
-      }
+    if (!indexExists() && hasDataFiles()) {
+      await runRagBuild();
+      // If build failed, still open the app so user can add data from the UI
     }
+    // When no data files, skip RAG build to avoid slow Python startup; open app so user can upload
 
     startBackend();
     const ready = await waitForServer();
     splash.close();
     if (!ready) {
       const { dialog } = require("electron");
-      dialog.showErrorBox(
-        "Backend Failed",
-        "Could not start the Python backend. Ensure Python and dependencies are installed:\npip install -r requirements.txt"
-      );
+      const scriptMissing = !fs.existsSync(path.join(PROJECT_ROOT, "start_backend.py"));
+      const msg = scriptMissing
+        ? "Backend not found. Run this app from the project folder (Ratio_Ai) so it can find start_backend.py.\n\nOr ensure dependencies are installed:\n  pip install -r requirements.txt -r requirements-build.txt"
+        : "Could not start the Python backend. Install dependencies first:\n\nFrom project root:\n  pip install -r requirements.txt -r requirements-build.txt\n\nOr from electron_app folder:\n  npm run install-deps\n\nThen restart the app.";
+      dialog.showErrorBox("Backend Failed", msg);
       app.quit();
       return;
     }
@@ -157,7 +202,7 @@ app.whenReady().then(async () => {
 });
 
 app.on("before-quit", () => {
-  if (backendProcess) {
-    backendProcess.kill();
+  if (backendProcess && !backendProcess.killed) {
+    try { backendProcess.kill(); } catch (_) {}
   }
 });

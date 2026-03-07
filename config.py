@@ -113,7 +113,7 @@ def get_temperature() -> float:
 
 
 def get_max_tokens() -> int:
-    return _env_int("MAX_TOKENS", 1024)
+    return _env_int("MAX_TOKENS", 4096)
 
 
 def get_port() -> int:
