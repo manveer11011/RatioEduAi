@@ -87,8 +87,10 @@ def api_chat(request: Request, body: ChatRequest):
         return ChatResponse(reply=reply)
     except HTTPException:
         raise
-    except Exception:
-        raise HTTPException(status_code=500, detail="Internal server error.")
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/status")

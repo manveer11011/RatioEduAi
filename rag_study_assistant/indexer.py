@@ -16,14 +16,14 @@ def build_index(chunks: list[dict], index_dir: str | Path) -> None:
         json.dump(payload, f, ensure_ascii=False, indent=0)
 
 
-def load_index(index_dir: str | Path) -> tuple[list[dict], BM25Okapi]:
+def load_index(index_dir: str | Path) -> tuple[list[dict], BM25Okapi | None]:
     index_path = Path(index_dir) / "documents.json"
     if not index_path.is_file():
-        return [], BM25Okapi([[]])
+        return [], None
     with open(index_path, "r", encoding="utf-8") as f:
         chunks = json.load(f)
     if not chunks:
-        return [], BM25Okapi([[]])
+        return [], None
     tokenized = [tokenize_for_bm25(c.get("text", "")) for c in chunks]
     bm25 = BM25Okapi(tokenized)
     return chunks, bm25

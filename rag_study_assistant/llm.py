@@ -3,7 +3,22 @@ import re
 from pathlib import Path
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_GGUF_PATH = _PROJECT_ROOT / "model" / "Qwen3-4B-Instruct-2507-Q4_K_S.gguf"
+# Try model/ first, then gpt-oss-20b-GGUF/ (README convention)
+_MODEL_DIRS = [
+    _PROJECT_ROOT / "model" / "Qwen3-4B-Instruct-2507-Q4_K_S.gguf",
+    _PROJECT_ROOT / "gpt-oss-20b-GGUF" / "gpt-oss-20b-MXFP4.gguf",
+    _PROJECT_ROOT / "gpt-oss-20b-GGUF" / "Llama-3.2-1B-Instruct-Q8_0.gguf",
+]
+
+
+def _find_default_model() -> Path:
+    for p in _MODEL_DIRS:
+        if p.is_file():
+            return p
+    return _MODEL_DIRS[0]  # fallback for error message
+
+
+DEFAULT_GGUF_PATH = _find_default_model()
 
 N_CTX = 2048
 TEMPERATURE = 0.2
