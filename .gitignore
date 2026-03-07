@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.Python
+*.so
+*.egg
+*.egg-info/
+.eggs/
+dist/
+build/
+*.manifest
+
+# Virtual environments
+env/
+venv/
+.venv/
+ENV/
+
+# GGUF model files (large binaries – add your model locally)
+*.gguf
+gpt-oss-20b-GGUF/*.gguf
+
+# RAG generated index (rebuilt with --build)
+index/documents.json
+
+# Chat / history (optional – uncomment if you want to keep history out of git)
+# chat_history/
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+*.pem
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs and temp
+*.log
+*.tmp
+.cache/

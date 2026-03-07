@@ -1,0 +1,16 @@
+Subject: Mathematics
+Chapter: 1 - Algebra
+
+METHOD: Solving a linear equation in one variable
+
+Step 1: Collect all terms containing the variable on one side of the equation and constants on the other.
+Step 2: Add or subtract the same quantity from both sides to isolate the variable term.
+Step 3: Multiply or divide both sides by the coefficient of the variable to get the solution.
+Step 4: Substitute the solution back into the original equation to verify.
+
+Example:
+Solve 2x + 3 = 7.
+Step 1: 2x = 7 - 3 = 4
+Step 2: (already isolated)
+Step 3: x = 4/2 = 2
+Step 4: 2(2) + 3 = 7. Correct.

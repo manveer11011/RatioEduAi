@@ -1,0 +1,7 @@
+Subject = my self
+
+question 1: what is my name?
+answer my name is Manveer Singh
+
+question 2: myself
+Paragraph: My name is Manveer Singh. I study in CGC Landran
