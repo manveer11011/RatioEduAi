@@ -81,7 +81,7 @@ def build():
 
     docs = load_documents(PROJECT_ROOT)
     if not docs:
-        print("No .txt files found in data/syllabus, data/notes, data/question_papers.", file=sys.stderr)
+        print("No .txt or .pdf files found in data/syllabus, data/notes, data/question_papers.", file=sys.stderr)
         return
     chunks = chunk_documents(docs)
     if not chunks:
@@ -105,7 +105,7 @@ def run_cli():
         index_dir = _ensure_semantic_index()
     except Exception as e:
         print(f"Index error: {e}", file=sys.stderr)
-        print("Add .txt files under data/syllabus, data/notes, data/question_papers, then run with --build.", file=sys.stderr)
+        print("Add .txt or .pdf files under data/syllabus, data/notes, data/question_papers, then run with --build.", file=sys.stderr)
         sys.exit(1)
 
     from rag_study_assistant.llm import load_llm, generate, get_model_path

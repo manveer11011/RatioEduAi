@@ -44,7 +44,7 @@ function hasDataFiles() {
         const full = path.join(dir, name);
         const stat = fs.statSync(full);
         if (stat.isDirectory() && walk(full)) return true;
-        if (stat.isFile() && name.toLowerCase().endsWith(".txt")) return true;
+        if (stat.isFile() && (name.toLowerCase().endsWith(".txt") || name.toLowerCase().endsWith(".pdf"))) return true;
       }
     } catch (_) { /* skip */ }
     return false;

@@ -32,3 +32,12 @@ def embed_text(text: str):
         emb = embedding_model.embed(text, normalize=True)
         return np.array(emb, dtype=np.float32)
     return embedding_model.encode(text)
+
+
+def embed_texts(texts: list[str], batch_size: int = 64):
+    """Embed multiple texts in batches. Much faster than embed_text in a loop."""
+    if not texts:
+        return np.zeros((0,), dtype=np.float32)
+    if _use_gguf:
+        return np.array([embed_text(t) for t in texts], dtype=np.float32)
+    return embedding_model.encode(texts, batch_size=batch_size, show_progress_bar=False)

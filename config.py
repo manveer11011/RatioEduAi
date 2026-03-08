@@ -134,3 +134,9 @@ def get_rate_limit_requests() -> int:
 
 def get_rate_limit_window_sec() -> int:
     return _env_int("RATE_LIMIT_WINDOW_SEC", 60)
+
+
+def use_ocr_for_pdf() -> bool:
+    """Whether to use OCR fallback for PDF pages with little extractable text (scanned pages)."""
+    val = _env("USE_OCR_FOR_PDF", "0").lower()
+    return val in ("1", "true", "yes", "on")

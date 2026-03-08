@@ -508,8 +508,8 @@
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <input type="file" id="uploadInput" accept=".txt" hidden>
-        <button type="button" class="upload-doc-btn" id="uploadDocBtn" title="Upload .txt document">Upload document</button>
+        <input type="file" id="uploadInput" accept=".txt,.pdf,application/pdf" hidden>
+        <button type="button" class="upload-doc-btn" id="uploadDocBtn" title="Upload .txt or .pdf document">Upload document</button>
         <button type="button" class="new-chat-btn" id="newChatBtn">+ New chat</button>
       </div>
       <div class="chat-list-wrap">
@@ -559,13 +559,22 @@
 
   <div class="modal-overlay" id="uploadModal">
     <div class="modal-box">
-      <h3>What type of document is this?</h3>
-      <p class="modal-desc">Choose <strong>Syllabus</strong> or <strong>Notes</strong> so your file is stored in the right place.</p>
-      <div class="modal-filename" id="uploadModalFileName"></div>
-      <div class="modal-actions">
-        <button type="button" class="modal-btn primary" id="uploadAsSyllabus">Syllabus</button>
-        <button type="button" class="modal-btn primary" id="uploadAsNotes">Notes</button>
-        <button type="button" class="modal-btn cancel" id="uploadModalCancel">Cancel</button>
+      <div id="uploadModalContent">
+        <h3>What type of document is this?</h3>
+        <p class="modal-desc">Choose <strong>Syllabus</strong> or <strong>Notes</strong> so your file is stored in the right place.</p>
+        <div class="modal-filename" id="uploadModalFileName"></div>
+        <div class="modal-actions">
+          <button type="button" class="modal-btn primary" id="uploadAsSyllabus">Syllabus</button>
+          <button type="button" class="modal-btn primary" id="uploadAsNotes">Notes</button>
+          <button type="button" class="modal-btn cancel" id="uploadModalCancel">Cancel</button>
+        </div>
+      </div>
+      <div id="uploadModalLoading" style="display: none;">
+        <h3>Processing document</h3>
+        <p class="modal-desc">Loading PDF and building index…</p>
+        <div class="loading-dots" style="margin-top: 16px; display: flex; justify-content: center;">
+          <span></span><span></span><span></span>
+        </div>
       </div>
     </div>
   </div>
@@ -585,6 +594,8 @@
     const uploadInput = document.getElementById("uploadInput");
     const uploadDocBtn = document.getElementById("uploadDocBtn");
     const uploadModal = document.getElementById("uploadModal");
+    const uploadModalContent = document.getElementById("uploadModalContent");
+    const uploadModalLoading = document.getElementById("uploadModalLoading");
     const uploadModalFileName = document.getElementById("uploadModalFileName");
     const uploadAsSyllabus = document.getElementById("uploadAsSyllabus");
     const uploadAsNotes = document.getElementById("uploadAsNotes");
@@ -842,8 +853,15 @@
     function doUpload(documentType) {
       if (!pendingUploadFile) return;
       const file = pendingUploadFile;
-      pendingUploadFile = null;
-      uploadModal.classList.remove("visible");
+      const isPdf = file.name.toLowerCase().endsWith(".pdf");
+
+      uploadModalContent.style.display = "none";
+      uploadModalLoading.style.display = "block";
+      uploadModalLoading.querySelector("p.modal-desc").textContent =
+        isPdf ? "Loading PDF and building index…" : "Saving and building index…";
+      uploadAsSyllabus.disabled = true;
+      uploadAsNotes.disabled = true;
+      uploadModalCancel.disabled = true;
 
       const form = new FormData();
       form.append("file", file);
@@ -855,13 +873,28 @@
       })
         .then((r) => r.json().catch(() => ({})))
         .then((data) => {
+          pendingUploadFile = null;
+          uploadModalContent.style.display = "";
+          uploadModalLoading.style.display = "none";
+          uploadAsSyllabus.disabled = false;
+          uploadAsNotes.disabled = false;
+          uploadModalCancel.disabled = false;
+          uploadModal.classList.remove("visible");
           if (data.ok) {
-            showToast("Document saved and index updated. Ready for chat.", "success");
+            showToast("Document saved and index built. Ready for chat.", "success");
             return;
           }
           showToast(data.detail || "Upload failed.", "error");
         })
-        .catch(() => showToast("Upload failed. Check connection.", "error"));
+        .catch(() => {
+          pendingUploadFile = file;
+          uploadModalContent.style.display = "";
+          uploadModalLoading.style.display = "none";
+          uploadAsSyllabus.disabled = false;
+          uploadAsNotes.disabled = false;
+          uploadModalCancel.disabled = false;
+          showToast("Upload failed. Check connection.", "error");
+        });
     }
 
     uploadDocBtn.addEventListener("click", () => uploadInput.click());
@@ -869,8 +902,9 @@
       const file = this.files && this.files[0];
       this.value = "";
       if (!file) return;
-      if (!file.name.toLowerCase().endsWith(".txt")) {
-        showToast("Please select a .txt file.", "error");
+      const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
+      if (ext !== ".txt" && ext !== ".pdf") {
+        showToast("Please select a .txt or .pdf file.", "error");
         return;
       }
       pendingUploadFile = file;

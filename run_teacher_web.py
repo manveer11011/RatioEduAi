@@ -162,8 +162,9 @@ def api_delete_chat(chat_id: str):
     return {"ok": True}
 
 
-# Document upload: .txt only, stored under data/syllabus or data/notes
+# Document upload: .txt and .pdf, stored under data/syllabus or data/notes
 ALLOWED_DOCUMENT_TYPES = frozenset({"syllabus", "notes"})
+ALLOWED_EXTENSIONS = frozenset({".txt", ".pdf"})
 
 
 @app.post("/api/upload-document")
@@ -171,9 +172,12 @@ async def api_upload_document(
     file: UploadFile = File(...),
     document_type: str = Form(...),
 ):
-    """Upload a .txt file and store under data/syllabus or data/notes."""
-    if not file.filename or not file.filename.lower().endswith(".txt"):
-        raise HTTPException(status_code=400, detail="Only .txt files are allowed.")
+    """Upload a .txt or .pdf file and store under data/syllabus or data/notes."""
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No filename provided.")
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="Only .txt and .pdf files are allowed.")
     doc_type = document_type.strip().lower()
     if doc_type not in ALLOWED_DOCUMENT_TYPES:
         raise HTTPException(
@@ -184,7 +188,7 @@ async def api_upload_document(
     data_dir = project_root / "data" / doc_type
     data_dir.mkdir(parents=True, exist_ok=True)
     # Sanitize filename: keep only safe chars
-    safe_name = "".join(c for c in file.filename if c.isalnum() or c in "._- ").strip() or "document.txt"
+    safe_name = "".join(c for c in file.filename if c.isalnum() or c in "._- ").strip() or f"document{ext}"
     dest = data_dir / safe_name
     try:
         content = await file.read()
