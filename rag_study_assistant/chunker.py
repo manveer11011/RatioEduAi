@@ -6,6 +6,9 @@ OVERLAP_TOKENS = 50
 CHUNK_SIZE_CHARS = CHUNK_SIZE_TOKENS * CHARS_PER_TOKEN
 OVERLAP_CHARS = OVERLAP_TOKENS * CHARS_PER_TOKEN
 
+# Max chunks per document to avoid MemoryError
+MAX_CHUNKS_PER_DOC = 5000
+
 
 def _simple_tokenize(text: str) -> list[str]:
     return re.findall(r"\S+\s*", text) if text else []
@@ -27,7 +30,7 @@ def chunk_document(doc: dict) -> list[dict]:
     }
     chunks = []
     start = 0
-    while start < len(content):
+    while start < len(content) and len(chunks) < MAX_CHUNKS_PER_DOC:
         end = min(start + CHUNK_SIZE_CHARS, len(content))
         if end < len(content):
             for sep in ("\n\n", "\n", ". ", " "):
@@ -41,7 +44,6 @@ def chunk_document(doc: dict) -> list[dict]:
                 "text": text,
                 **meta,
             })
-        # Advance by at least one character; avoid infinite loop when content is short
         start = end - OVERLAP_CHARS
         if start < 0 or start >= len(content):
             break

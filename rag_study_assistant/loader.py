@@ -2,8 +2,11 @@ import os
 import re
 from pathlib import Path
 
+from rag_study_assistant.pdf_reader import extract_text_from_pdf
 
-DATA_DIRS = ("data/syllabus", "data/notes", "data/question_papers")
+# Max chars per document to avoid MemoryError on huge PDFs
+MAX_CONTENT_CHARS = 500_000
+
 TYPE_BY_DIR = {
     "syllabus": "theory",
     "notes": "theory",
@@ -27,7 +30,7 @@ def _infer_subject(filepath: str, data_root: Path) -> str:
         parts = rel.parts
         if len(parts) >= 3:
             return parts[1]  # e.g. notes/Mathematics/ch1.txt -> Mathematics
-        if len(parts) == 2 and not parts[1].endswith(".txt"):
+        if len(parts) == 2 and not (parts[1].endswith(".txt") or parts[1].endswith(".pdf")):
             return parts[1]
         return parts[0] if parts else Path(filepath).parent.name or "unknown"
     except (ValueError, IndexError):
@@ -54,7 +57,6 @@ def _infer_type_from_path(filepath: str, base_dir: str, data_root: Path) -> str:
 
 
 def load_documents(project_root: str | Path | None = None) -> list[dict]:
-    # Default to package project root when None (avoid cwd-dependent behavior)
     if project_root is None:
         root = Path(__file__).resolve().parent.parent
     else:
@@ -65,23 +67,29 @@ def load_documents(project_root: str | Path | None = None) -> list[dict]:
         dir_path = data_root / base
         if not dir_path.is_dir():
             continue
-        for f in dir_path.rglob("*.txt"):
-            try:
-                text = f.read_text(encoding="utf-8", errors="replace").strip()
-            except Exception:
-                continue
-            if not text:
-                continue
-            rel_path = f.relative_to(root)
-            source_file = str(rel_path).replace("\\", "/")
-            subject = _infer_subject(str(f), data_root)
-            chapter = _infer_chapter(str(f))
-            doc_type = _infer_type_from_path(str(f), base, data_root)
-            out.append({
-                "source_file": source_file,
-                "content": text,
-                "subject": subject,
-                "chapter": chapter,
-                "type": doc_type,
-            })
+        for pattern in ("*.txt", "*.pdf"):
+            for f in dir_path.rglob(pattern):
+                try:
+                    if f.suffix.lower() == ".txt":
+                        text = f.read_text(encoding="utf-8", errors="replace").strip()
+                    else:
+                        text = extract_text_from_pdf(f).strip()
+                except Exception:
+                    continue
+                if not text:
+                    continue
+                if len(text) > MAX_CONTENT_CHARS:
+                    text = text[:MAX_CONTENT_CHARS] + "\n\n[... truncated for memory ...]"
+                rel_path = f.relative_to(root)
+                source_file = str(rel_path).replace("\\", "/")
+                subject = _infer_subject(str(f), data_root)
+                chapter = _infer_chapter(str(f))
+                doc_type = _infer_type_from_path(str(f), base, data_root)
+                out.append({
+                    "source_file": source_file,
+                    "content": text,
+                    "subject": subject,
+                    "chapter": chapter,
+                    "type": doc_type,
+                })
     return out

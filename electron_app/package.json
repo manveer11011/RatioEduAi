@@ -1,0 +1,53 @@
+{
+  "name": "local-teacher-ai",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "install-deps": "pip install -r ../requirements.txt -r ../requirements-build.txt",
+    "prebuild": "node ensure-dirs.js && pip install -r ../requirements.txt -r ../requirements-build.txt",
+    "dev": "npx electron .",
+    "start": "npx electron .",
+    "build": "electron-builder"
+  },
+  "build": {
+    "appId": "com.ratioedu.app",
+    "productName": "RatioEdu",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "index.html"
+    ],
+    "extraResources": [
+      { "from": "../start_backend.py", "to": "." },
+      { "from": "../run_teacher_web.py", "to": "." },
+      { "from": "../config.py", "to": "." },
+      { "from": "../app", "to": "app" },
+      { "from": "../rag_study_assistant", "to": "rag_study_assistant" },
+      { "from": "../data", "to": "data", "filter": ["**/*"] },
+      { "from": "../model", "to": "model", "filter": ["**/*"] },
+      { "from": "../requirements.txt", "to": "." },
+      { "from": "../requirements-build.txt", "to": "." }
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": null
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "include": "build/installer.nsh"
+    }
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^25.1.8"
+  }
+}

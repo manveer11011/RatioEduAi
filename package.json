@@ -1,0 +1,11 @@
+{
+  "name": "ai-teacher",
+  "version": "1.0.0",
+  "description": "RatioEdu - Electron desktop app + RAG backend",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix electron_app",
+    "start": "npm run start --prefix electron_app",
+    "backend": "python run_teacher_web.py"
+  }
+}

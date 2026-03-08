@@ -3,5 +3,5 @@ Subject = my self
 question 1: what is my name?
 answer my name is Manveer Singh
 
-question 2: myself
-Paragraph: My name is Manveer Singh. I study in CGC Landran
+question 2: where did i study
+answer: I study in CGC Landran
